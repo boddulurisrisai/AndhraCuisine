@@ -1,0 +1,17 @@
+version: "3.0"
+intents:
+  - greet
+  - ask_for_recommendations
+  - inform
+entities:
+  - product
+slots:
+  product:
+    type: unfeaturized
+responses:
+  utter_greet:
+    - text: "Hello! How can I assist you today?"
+  utter_recommendation:
+    - text: "I recommend the following products: {products}"
+actions:
+  - action_recommend_product
