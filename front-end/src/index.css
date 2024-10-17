@@ -151,3 +151,57 @@ code {
 .chat-input button:hover {
   background-color: #0056b3;
 }
+
+/* ChatAssistant.css */
+
+.chat-assistant-container {
+  display: flex;
+  flex-direction: column;
+  height: 500px;
+  width: 400px;
+  border: 1px solid #ccc;
+  padding: 20px;
+  background-color: #f9f9f9;
+}
+
+.chat-box {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 10px;
+}
+
+.message {
+  padding: 10px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.message.user {
+  background-color: #daf7a6;
+  align-self: flex-end;
+}
+
+.message.assistant {
+  background-color: #eee;
+  align-self: flex-start;
+}
+
+.chat-input-container {
+  display: flex;
+}
+
+.chat-input-container input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.chat-input-container button {
+  padding: 10px 20px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}

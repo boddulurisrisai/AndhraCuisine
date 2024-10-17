@@ -1,84 +1,61 @@
-// server.js
-const mongoose = require('mongoose');
-const dotenv = require('dotenv');
-const express = require('express');
-const bodyParser = require('body-parser');
-const axios = require('axios'); // For making HTTP requests to OpenAI
+import dotenv from 'dotenv'; // Use import instead of require
+import express from 'express'; // Use import instead of require
+import bodyParser from 'body-parser'; // Use import instead of require
+import mongoose from 'mongoose'; // Use import instead of require
+import axios from 'axios'; // Use import instead of require
 
-const app = express();
-
-// Load environment variables
 dotenv.config();
 
-// Middleware to parse JSON requests
+import { makeOpenAIRequest } from './services/openaiService.js';
+
+const app = express();
+const port = 3030;
+
+// Middleware to parse JSON bodies
 app.use(bodyParser.json());
 
-// MongoDB connection string from .env
-const DB_URI = process.env.DB_URI || 'mongodb://localhost:27017/foodservice';
-const OPENAI_API_KEY = 'sk-proj-7_I®lLwk-tGvxWDP6f1DQes@¡f¡JoX00-CNVawnojG54mf82MIWDTEndy_Br40sja_M]5HCYyaBT3B1bkFJ15dWMKsgwokMoEfMAW-_squNnTd5JXDs8GfQMiucm6-DjUqgdZXXzUFR9j2ntjpM-qweFIgDQA';
-// Connect to MongoDB
-mongoose.connect(DB_URI)
-  .then(() => {
-    console.log('Connected to MongoDB');
-  })
-  .catch((error) => {
-    console.error('Error connecting to MongoDB:', error);
-  });
+// Connect to MongoDB using the URI from environment variables
+const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/foodservice'; // Fallback to default URI
 
-// Test route to check MongoDB connection
-app.get('/test', async (req, res) => {
-  try {
-    const result = await mongoose.connection.db.collection('foodItems').findOne({});
-    res.status(200).json({ message: 'MongoDB is connected!', data: result });
-  } catch (error) {
-    res.status(500).json({ message: 'Error connecting to MongoDB', error });
-  }
-});
+mongoose.connect('mongoUri');
 
-// Route to handle chat messages
-app.post('/api/chat/message', async (req, res) => {
+// Define a POST route for food recommendations
+// Define a POST route for food recommendations
+app.post("/api/chat/recommendation", async (req, res) => {
   const userMessage = req.body.message;
 
+  // Ensure the user message is present
+  if (!userMessage) {
+      return res.status(400).json({ error: "No message provided" });
+  }
+
   try {
-    // Call OpenAI's API
-    const openAiResponse = await axios.post(
-      `https://api.openai.com/v1/chat/completions`,
-      {
-        model: "gpt-3.5-turbo", // Use the desired OpenAI model
-        messages: [{ role: "user", content: userMessage }],
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+      // Fetch products from MongoDB
+      const products = await Product.find();
 
-    const assistantResponse = openAiResponse.data.choices[0].message.content;
+      // Prepare the prompt for OpenAI
+      const productList = products.map(product => `${product.name}: ${product.description}`).join("\n");
+      const prompt = `Based on the following products:\n${productList}\n\nUser asked for: ${userMessage}\n\nPlease recommend some products.`;
 
-    // Perform a simple search in the database based on the assistant's response
-    const recommendedProduct = await mongoose.connection.db.collection('foodItems').findOne({
-      name: { $regex: new RegExp(assistantResponse, 'i') }
-    });
+      // Make a request to the OpenAI API using the utility function
+      const response = await makeOpenAIRequest({
+          model: "gpt-3.5-turbo", // Use your desired model
+          messages: [{ role: "user", content: prompt }],
+      });
 
-    res.status(200).json({ text: assistantResponse, product: recommendedProduct });
+      // Extract the assistant's response
+      const assistantMessage = response.choices[0].message.content;
+
+      // Send the assistant's response back to the client
+      res.json({ text: assistantMessage });
   } catch (error) {
-    console.error('Error processing chat message:', error);
-    res.status(500).json({ message: 'Error processing message', error });
+      console.error("Error with OpenAI API:", error);
+      // Handle error and send a response
+      res.status(500).json({ error: "Failed to fetch response from OpenAI" });
   }
 });
 
-// Route to handle purchases (add your implementation)
-app.post('/api/chat/purchase', async (req, res) => {
-  // Handle purchase logic here
-  const { name, address, paymentInfo, productId } = req.body;
-  // Example response for the sake of the demo
-  res.status(200).json({ orderNumber: Math.floor(Math.random() * 10000) });
-});
-
-// Start the server
-const PORT = process.env.PORT || 3030;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+// Start the Express server
+app.listen(port, () => {
+    console.log(`Server is running at http://localhost:${port}`);
 });
