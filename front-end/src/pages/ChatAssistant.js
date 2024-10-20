@@ -10,8 +10,8 @@ function ChatAssistant() {
         setMessages((prevMessages) => [...prevMessages, { text: newMessage, sender: 'user' }]);
 
         try {
-            // Sending message to backend server, which interacts with OpenAI
-            const response = await fetch('http://localhost:3030/api/chat/message', {
+            // Sending message to the correct backend API, which interacts with OpenAI
+            const response = await fetch('http://localhost:3030/api/chat/recommendation', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message: newMessage }),
@@ -22,14 +22,15 @@ function ChatAssistant() {
             // Add assistant's response to the chat
             setMessages((prevMessages) => [
                 ...prevMessages,
-                { text: data.text, sender: 'assistant' },
+                { text: data.recommendation, sender: 'assistant' },
             ]);
 
-            // If menu recommendations are available, display them in the chat
-            if (data.menuItems) {
+            // If products are returned, display them as a list in the chat
+            if (data.products && data.products.length > 0) {
+                const productList = data.products.map(product => `${product.name}: ${product.description}`).join('\n');
                 setMessages((prevMessages) => [
                     ...prevMessages,
-                    { text: `Recommended Menu: ${data.menuItems.join(', ')}`, sender: 'assistant' },
+                    { text: `Here are some products:\n${productList}`, sender: 'assistant' }
                 ]);
             }
 
@@ -47,7 +48,9 @@ function ChatAssistant() {
             <div className="chat-box">
                 {messages.map((message, index) => (
                     <div key={index} className={`message ${message.sender}`}>
-                        {message.text}
+                        {message.text.split('\n').map((line, i) => (
+                            <div key={i}>{line}</div>
+                        ))}
                     </div>
                 ))}
             </div>
