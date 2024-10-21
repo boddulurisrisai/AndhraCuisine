@@ -55,6 +55,59 @@ const itemSchema = new mongoose.Schema({
 
 const Item = mongoose.model('Item', itemSchema, 'Fooditems'); // 'Fooditems' is the exact collection name
 
+//
+// // POST route for food recommendations
+// app.post("/api/chat/recommendation", async (req, res) => {
+//     console.log("Received a request to /api/chat/recommendation");
+//
+//     const userMessage = req.body.message;
+//
+//     // Ensure the user message is present
+//     if (!userMessage) {
+//         return res.status(400).json({ error: "No message provided" });
+//     }
+//
+//     try {
+//         console.log("Fetching products from MongoDB...");
+//         const products = await Item.find();
+//         console.log("Products fetched:", products); // Log products
+//
+//         if (products.length === 0) {
+//             return res.status(404).json({ error: "No products found" });
+//         }
+//
+//         // Prepare a list of products for the OpenAI prompt
+//         const productList = products.map(product => `${product.name}: ${product.description}`).join("\n");
+//
+//         // Prepare the prompt for OpenAI
+//         const prompt = `Here are some available food items:\n${productList}\n\nThe user asked: "${userMessage}". Please provide a food recommendation based on these products.`;
+//
+//         // Make a request to the OpenAI API using the utility function
+//         const response = await makeOpenAIRequest({
+//             model: "gpt-3.5-turbo", // Specify your desired OpenAI model
+//             messages: [{ role: "user", content: prompt }],
+//         });
+//
+//         // Extract the assistant's response
+//         const assistantMessage = response.choices[0].message.content;
+//
+//         // Send the assistant's response and fetched products back to the client in JSON format
+//         res.json({
+//             recommendation: assistantMessage,
+//             products: products // Products fetched from MongoDB
+//         });
+//     } catch (error) {
+//         console.error("Error with OpenAI API or MongoDB:", error);
+//
+//         // Check if the error is related to quota
+//         if (error.response && error.response.status === 429) {
+//             res.status(429).json({ error: "You have exceeded your quota or hit the rate limit. Please check your OpenAI account." });
+//         } else {
+//             res.status(500).json({ error: "Failed to fetch response from OpenAI or MongoDB" });
+//         }
+//     }
+// });
+
 
 // POST route for food recommendations
 app.post("/api/chat/recommendation", async (req, res) => {
@@ -68,19 +121,9 @@ app.post("/api/chat/recommendation", async (req, res) => {
     }
 
     try {
-        console.log("Fetching products from MongoDB...");
-        const products = await Item.find();
-        console.log("Products fetched:", products); // Log products
-
-        if (products.length === 0) {
-            return res.status(404).json({ error: "No products found" });
-        }
-
-        // Prepare a list of products for the OpenAI prompt
-        const productList = products.map(product => `${product.name}: ${product.description}`).join("\n");
-
-        // Prepare the prompt for OpenAI
-        const prompt = `Here are some available food items:\n${productList}\n\nThe user asked: "${userMessage}". Please provide a food recommendation based on these products.`;
+        // Prepare the prompt to send to OpenAI
+        const prompt = `
+        I am a chatbot assistant. The user asked: "${userMessage}". Please provide a helpful and friendly food recommendation.`;
 
         // Make a request to the OpenAI API using the utility function
         const response = await makeOpenAIRequest({
@@ -91,19 +134,18 @@ app.post("/api/chat/recommendation", async (req, res) => {
         // Extract the assistant's response
         const assistantMessage = response.choices[0].message.content;
 
-        // Send the assistant's response and fetched products back to the client in JSON format
+        // Send the assistant's response back to the client in JSON format
         res.json({
             recommendation: assistantMessage,
-            products: products // Products fetched from MongoDB
         });
     } catch (error) {
-        console.error("Error with OpenAI API or MongoDB:", error);
+        console.error("Error with OpenAI API:", error);
 
-        // Check if the error is related to quota
+        // Check if the error is related to quota or rate limiting
         if (error.response && error.response.status === 429) {
             res.status(429).json({ error: "You have exceeded your quota or hit the rate limit. Please check your OpenAI account." });
         } else {
-            res.status(500).json({ error: "Failed to fetch response from OpenAI or MongoDB" });
+            res.status(500).json({ error: "Failed to fetch response from OpenAI." });
         }
     }
 });
