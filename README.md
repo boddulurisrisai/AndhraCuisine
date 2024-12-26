@@ -1,4 +1,4 @@
-# Cuisine Connect
+# AndhraCuisine
 
 ## Overview
 
@@ -98,9 +98,6 @@ The application uses **React** for the frontend and **Flask** for the backend.
 ### Login Credentials
 
 Use the following credentials to log in:
-
-- **Username**: `testuser`
-- **Password**: `password123`
 
 Or use the **Sign Up** option to create a new account.
 
